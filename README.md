@@ -4,7 +4,7 @@ This repository provides an easy way to test the GC-AI application locally using
 
 ## 🚀 Installation and Execution
 
-### 1️⃣ **Prerequisites**
+### 1. **Prerequisites**
 Before getting started, make sure you have installed:
 - [Docker](https://www.docker.com/get-started) 🐳
 - [Docker Compose](https://docs.docker.com/compose/install/) (already included in Docker Desktop)
@@ -18,7 +18,7 @@ And for Docker Compose:
 docker compose version
 ```
 
-### 2️⃣ **Download the Project**
+### 2. **Download the Project**
 Clone the repository or download the `docker-compose.yml` file into a local folder:
 
 - Using SSH:
@@ -34,7 +34,7 @@ Clone the repository or download the `docker-compose.yml` file into a local fold
 
   ```
 
-### 3️⃣ **Run the Project**
+### 3. **Run the Project**
 In the same folder where `docker-compose.yml` is located, run:
 ```sh
 docker compose up -d
@@ -43,13 +43,13 @@ This will download the necessary images and start the services automatically.
 
 🚨 **Important:** After running the above command, please wait **at least 5 minutes** before using the application to ensure the database and model are fully loaded. This helps prevent potential connection or initialization errors. Additionally, once you access the homepage, it is normal for the page to take approximately 10 seconds to load. This delay is expected and occurs due to the system being in test mode.
 
-### 4️⃣ **Access the Application**
+### 4. **Access the Application**
 Once the containers are running, you can access:
 - **Frontend:** [http://localhost:8081](http://localhost:8081)
 - **Backend API:** [http://localhost:5001](http://localhost:5001)
 - **Database:** MySQL will be available on port `3307` (user `root`, password `igemparts2024`).
 
-### 5️⃣ **Handling Port Conflicts**
+### 5. **Handling Port Conflicts**
 If you experience issues due to port conflicts, follow these steps:
 
 #### Check Which Process is Using the Port
@@ -84,7 +84,7 @@ Replace `<PID>` with the actual process ID.
   
 🚨 **The backend must remain on port 5001, as it is preconfigured to use this port. Do not change it.**
 
-### 6️⃣ **Stop the Application**
+### 6. **Stop the Application**
 To stop the services, use:
 ```sh
 docker compose down
