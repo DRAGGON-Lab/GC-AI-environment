@@ -1,6 +1,6 @@
 # GC-AI: Local Testing Environment
 
-This repository provides an easy way to test the GC-AI application locally using Docker. Anyone interested in running the project on their machine can follow these simple steps.
+This repository provides an easy way to run the [GC-AI](https://github.com/DRAGGON-Lab/GC-AI) application locally using Docker. Anyone interested in running the project on their machine can follow these simple steps.
 
 ## 🚀 Installation and Execution
 
@@ -18,73 +18,90 @@ And for Docker Compose:
 docker compose version
 ```
 
+You also need about **14 GB of free disk space** for the images (a 4.5 GB download that unpacks to roughly 14 GB, most of it the backend's machine learning dependencies), and a machine with at least 4 GB of RAM available to Docker. The images are built for `linux/amd64`, so on Apple Silicon and other arm64 hosts they run under emulation: everything works, but detection and startup are slower.
+
 ### 2. **Download the Project**
 Clone the repository or download the `docker-compose.yml` file into a local folder:
 
 - Using SSH:
   ```sh
-  git clone git@github.com:cvtalrc/GC-AI-environment.git
+  git clone git@github.com:DRAGGON-Lab/GC-AI-environment.git
   cd GC-AI-environment
   ```
-  
+
 - Using HTTPS (no SSH key required):
   ```sh
-  git clone https://github.com/cvtalrc/GC-AI-environment.git
+  git clone https://github.com/DRAGGON-Lab/GC-AI-environment.git
   cd GC-AI-environment
-
   ```
 
 ### 3. **Run the Project**
 In the same folder where `docker-compose.yml` is located, run:
 ```sh
-docker compose up -d
+docker compose up -d --wait
 ```
-This will download the necessary images and start the services automatically.
+This downloads the images and starts the services. `--wait` returns only once the database and the backend both report healthy, which means the backend is serving, the detection model is loaded, and the parts database answers queries — so when the command finishes, the application is ready to use.
 
-🚨 **Important:** After running the above command, please wait **at least 5 minutes** before using the application to ensure the database and model are fully loaded. This helps prevent potential connection or initialization errors. Additionally, once you access the homepage, it is normal for the page to take approximately 10 seconds to load. This delay is expected and occurs due to the system being in test mode.
+The first start takes a while: the images download, then MySQL initialises and the backend loads the detection model.
 
-### 4. **Access the Application**
-Once the containers are running, you can access:
+To watch what is happening while it comes up:
+```sh
+docker compose logs -f backend
+```
+
+### 4. **Check the Installation**
+```sh
+./smoke-test.sh
+```
+This confirms the parts database returns data, that one known part comes back with its sequence, and that the web interface responds. It prints the URL to open when everything passes, and the relevant `docker compose logs` command when something does not.
+
+The API's own `/healthcheck/` endpoint reports `500` in this build whatever the state of the service, because it closes its database cursor without reading the result of its test query. Use the smoke test, or `docker compose ps`, to check whether the stack is up.
+
+### 5. **Access the Application**
 - **Frontend:** [http://localhost:8081](http://localhost:8081)
 - **Backend API:** [http://localhost:5001](http://localhost:5001)
-- **Database:** MySQL will be available on port `3307` (user `root`, password `igemparts2024`).
+- **Database:** MySQL on port `3307` (user `root`, password `igemparts2024`)
 
-### 5. **Handling Port Conflicts**
-If you experience issues due to port conflicts, follow these steps:
-
-#### Check Which Process is Using the Port
-Run the following command to see which process is using a specific port:
+### 6. **Changing Ports and the Database Password**
+Copy `.env.example` to `.env` and edit the values:
 ```sh
-netstat -tulnp | grep :<PORT>  # Linux
-lsof -i :<PORT>                # macOS
+cp .env.example .env
+```
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `FRONTEND_PORT` | `8081` | Host port for the web interface |
+| `BACKEND_PORT` | `5001` | Host port for the backend API |
+| `DB_PORT` | `3307` | Host port for MySQL |
+| `DB_PASSWORD` | `igemparts2024` | MySQL root password |
+
+Then apply them:
+```sh
+docker compose up -d --wait
+```
+
+🚨 **The web interface requires the backend on host port 5001.** The frontend bundle has `http://localhost:5001` compiled in, so a different `BACKEND_PORT` leaves the API reachable on the new port while the web interface can no longer reach it. Change it only when you are calling the API directly.
+
+`DB_PASSWORD` applies to a new database volume. To change it on an existing installation, remove the volume first with `docker compose down -v`.
+
+### 7. **Handling Port Conflicts**
+If a port is already in use, set a different one in `.env` as described above.
+
+To find out what is holding a port:
+```sh
+lsof -i :<PORT>                 # macOS
+ss -tulpn | grep :<PORT>        # Linux
 netstat -ano | findstr :<PORT>  # Windows
 ```
-Replace `<PORT>` with the port number causing the conflict (e.g., 5001, 8081, or 3307).
+Replace `<PORT>` with the port number in question (for example 5001, 8081, or 3307).
 
-#### Kill the Process Using the Port
-Once you identify the process ID (PID), terminate it with:
+To stop the process using it:
 ```sh
-kill -9 <PID>  # Linux/macOS
+kill -9 <PID>           # Linux/macOS
 taskkill /PID <PID> /F  # Windows
 ```
-Replace `<PID>` with the actual process ID.
 
-#### Changing Ports (If Necessary)
-- To change the **frontend** port, modify the following line in `docker-compose.yml`:
-  ```yaml
-  ports:
-    - "8082:80"  # Change 8081 to another available port
-  ```
-
-- To change the **database** port, modify these lines:
-  ```yaml
-  ports:
-    - "3308:3306"  # Change 3307 to another available port
-  ```
-  
-🚨 **The backend must remain on port 5001, as it is preconfigured to use this port. Do not change it.**
-
-### 6. **Stop the Application**
+### 8. **Stop the Application**
 To stop the services, use:
 ```sh
 docker compose down
@@ -95,7 +112,7 @@ docker compose down -v
 ```
 
 ## 📌 Notes
-- No manual configuration is required—everything is ready to run with Docker.
-- If you encounter any issues, try restarting Docker and running the commands again.
-- If a port conflict occurs, follow the steps above to free the port instead of changing it.
-
+- No manual configuration is required — everything is ready to run with Docker.
+- The images are pinned by digest, so every installation runs the exact same build. The tag each digest corresponds to is in a comment above it in `docker-compose.yml`.
+- To pick up a newer published build, run `docker compose pull` after updating the digests.
+- If something fails to start, `docker compose ps` shows which service is unhealthy and `docker compose logs <service>` shows why.
