@@ -1,13 +1,19 @@
 services:
   backend:
-    image: cvtalrc/gc-ai-backend:latest
+    # cvtalrc/gc-ai-backend:latest
+    image: cvtalrc/gc-ai-backend@sha256:ca69a541fb8b9cecec88764b36e19274d058f8407078f6efa0320a89c9ebd37a
+    # The published images are built for linux/amd64 only; declaring the platform
+    # keeps Apple Silicon and other arm64 hosts on explicit emulation.
+    platform: linux/amd64
     ports:
-      - "5001:5001"
+      # The container port is fixed: the frontend bundle has the backend URL
+      # compiled in at http://localhost:5001.
+      - "${BACKEND_PORT:-5001}:5001"
     environment:
       DB_HOST: "db"
       DB_PORT: "3306"
       DB_USER: "root"
-      DB_PASSWORD: "igemparts2024"
+      DB_PASSWORD: "${DB_PASSWORD:-igemparts2024}"
       DB_NAME: "iGEM2024"
       APP_HOST: '0.0.0.0'
       APP_PORT: "5001"
@@ -17,29 +23,52 @@ services:
       db:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      # A successful part lookup is the signal that the API is usable: it proves
+      # the application is serving, that the detection model loaded (it is loaded
+      # at import, so the application does not serve without it), and that the
+      # parts database answers queries.
+      #
+      # The /healthcheck/ endpoint is not used. It closes its database cursor
+      # without reading the result of its test query, which makes the MySQL
+      # connector in this image raise "Unread result found", so it answers 500
+      # whatever the state of the service.
+      test:
+        - "CMD"
+        - "python"
+        - "-c"
+        - "import urllib.request; urllib.request.urlopen('http://localhost:5001/component/names?role=Promoter', timeout=30)"
+      interval: 15s
+      timeout: 45s
+      retries: 20
+      start_period: 300s
 
   frontend:
-    image: cvtalrc/gc-ai-frontend:latest
+    # cvtalrc/gc-ai-frontend:latest
+    image: cvtalrc/gc-ai-frontend@sha256:080123fe47d1f0fe81451cb16e9aeea495dbd779c21fe96de2e8acc88a586f77
+    platform: linux/amd64
     ports:
-      - "8081:80"
+      - "${FRONTEND_PORT:-8081}:80"
     networks:
       - app_network
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
   db:
-    image: cvtalrc/gc-ai-db:latest
+    # cvtalrc/gc-ai-db:latest
+    image: cvtalrc/gc-ai-db@sha256:ff285f1370a7ee900d871c0a621232d3de29ecc39afd096d342f30449d89a695
+    platform: linux/amd64
     container_name: igem_db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: "igemparts2024"
+      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD:-igemparts2024}"
       MYSQL_DATABASE: "iGEM2024"
     ports:
-      - "3307:3306"
+      - "${DB_PORT:-3307}:3306"
     volumes:
       - db-data:/var/lib/mysql
-     
     networks:
       - app_network
     healthcheck:
@@ -49,9 +78,8 @@ services:
       start_period: 240s
 
 volumes:
-  db-data:  
+  db-data:
 
 networks:
   app_network:
     driver: bridge
-  
