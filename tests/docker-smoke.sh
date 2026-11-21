@@ -60,6 +60,75 @@ docker compose -f compose.hosted.yml exec -T db sh -c '
  if mysql --defaults-extra-file="$config" iGEM2024 -e "INSERT INTO parts VALUES (\"forbidden\",\"coding\",\"a\")" 2>/dev/null; then exit 1; fi
  mysql --defaults-extra-file="$config" -e "SHOW GRANTS" | tail -n +2
 ' > receipts/application-grants.txt
+# Real connector/secrets/network probe with only the detector substituted.
+# This does not change the Gunicorn worker and establishes no checkpoint readiness.
+docker compose -f compose.hosted.yml exec -T backend python - <<'PY'
+from app import config, create_app
+config.model = object()
+response = create_app().test_client().get('/healthcheck/')
+assert response.status_code == 200, 'Mock-detector/real-MySQL readiness failed'
+assert response.get_json()['status'] == 'healthy'
+print('Readiness passed: mocked detector and real MySQL consumed SELECT 1')
+PY
+# Exercise actual TLS -> Basic auth -> Nginx -> Gunicorn create/convert traffic.
+# Handles and credentials stay in private files; neither is a command argument.
+python3 - <<'PY'
+import json
+from pathlib import Path
+payload = {
+    'namespace': 'https://ci.example.test/design',
+    'components': [
+        {'name': 'Design', 'role': 'Engineered-Region', 'new': True, 'uri': 'https://ci.example.test/'},
+        {'name': 'part0', 'role': 'CDS', 'new': True, 'uri': 'https://ci.example.test/', 'sequence': 'ATGC'},
+        {'name': 'part1', 'role': 'CDS', 'new': True, 'uri': 'https://ci.example.test/', 'sequence': 'NNAA'},
+    ],
+    'expressions': [], 'interactions': [], 'eds': [],
+}
+request = Path('receipts/create-request.json')
+request.write_text(json.dumps(payload))
+request.chmod(0o600)
+PY
+(umask 077; curl --config secrets/curl.conf -fsS \
+ --header 'Content-Type: application/json' --header 'Origin: https://localhost' \
+ --data-binary @receipts/create-request.json --dump-header receipts/create.headers \
+ --output receipts/full.xml https://localhost/api/file/create)
+python3 - <<'PY'
+import json,re
+from pathlib import Path
+headers = {}
+for line in Path('receipts/create.headers').read_text().splitlines():
+    if ':' in line:
+        key, value = line.split(':', 1)
+        headers[key.lower()] = value.strip()
+assert 'file_path_structural' not in headers, 'Legacy server-path header exposed'
+handle = headers.get('x-gcai-structural-handle', '')
+assert re.fullmatch(r'v1_[A-Za-z0-9_-]{43}', handle), 'Invalid structural handle header'
+request = Path('receipts/convert-request.json')
+request.write_text(json.dumps({'structural_handle': handle, 'fasta': True, 'genbank': True}))
+request.chmod(0o600)
+PY
+(umask 077; curl --config secrets/curl.conf -fsS \
+ --header 'Content-Type: application/json' --header 'Origin: https://localhost' \
+ --data-binary @receipts/convert-request.json --output receipts/converted.zip \
+ https://localhost/api/file/convert)
+docker compose -f compose.hosted.yml exec -T backend python -c '
+import io,sys,zipfile
+from Bio import SeqIO
+expected = {"Design":"atgctactagagnnaa", "part0":"atgc", "part1":"nnaa"}
+with zipfile.ZipFile(io.BytesIO(sys.stdin.buffer.read())) as archive:
+    assert sorted(archive.namelist()) == ["design.fasta", "design.gb"]
+    for name, format in [("design.fasta", "fasta"), ("design.gb", "genbank")]:
+        records = list(SeqIO.parse(io.StringIO(archive.read(name).decode()), format))
+        assert len(records) == len(expected)
+        records = {record.id.split(".")[0]: record for record in records}
+        assert set(records) == set(expected)
+        assert {key:str(record.seq).lower() for key,record in records.items()} == expected
+        if format == "genbank":
+            coordinates = sorted((int(feature.location.start), int(feature.location.end))
+                                 for feature in records["Design"].features)
+            assert coordinates == [(0,4),(12,16)]
+print("Authenticated TLS create/convert archive sequences and coordinates passed")
+' < receipts/converted.zip
 printf "SELECT User,Host FROM mysql.user WHERE User='root' AND Host<>'localhost';\n" > receipts/check-root.sql
 scripts/root-sql.sh receipts/check-root.sql > receipts/remote-root.txt
 test ! -s receipts/remote-root.txt
@@ -89,6 +158,9 @@ Path('receipts/ci-execution.json').write_text(json.dumps({
  'backend_image_id':os.environ['GCAI_BACKEND_IMAGE'],
  'frontend_image_id':os.environ['GCAI_FRONTEND_IMAGE'],
  'mysql_image_digest':os.environ['GCAI_MYSQL_IMAGE'],
- 'executed_at_unix':time.time(),'real_checkpoint_gpu':'not_run: deliberate CI placeholder',
+ 'executed_at_unix':time.time(),
+ 'readiness':'passed: mocked detector, real MySQL connector and consumed SELECT 1',
+ 'hosted_tls_create_convert':'passed: authenticated wire requests, exact ZIP formats, sequences and coordinates',
+ 'real_checkpoint_gpu':'not_run: deliberate CI placeholder',
  'production_migration':'not_run','credential_rotation':'not_run'},indent=2)+'\n')
 PY

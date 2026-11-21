@@ -36,3 +36,14 @@ failed-dump paths before the fix. The regression verifies the ephemeral file is
 client exec is explicit, containers and temporary credentials are removed on
 success/failure, and credential values never enter Docker command arguments.
 These are mocked Docker executions; real legacy-image import remains not_run.
+
+The Docker smoke now also exercises healthy readiness in an isolated backend
+Python process with only `config.model` replaced by an object. Its actual Flask
+health route uses the real MySQL connector, mounted application secret, private
+network and consumed `SELECT 1`. This does not mutate the Gunicorn worker or
+claim checkpoint/GPU initialization. The smoke then sends authenticated TLS
+create/convert requests through Nginx and Gunicorn, retaining the handle only in
+private files. Both requested ZIP entries are parsed with BioPython inside the
+backend, with exact sequence identities/bases and GenBank feature coordinates
+asserted. These new checks have syntax/static verification only until the
+Docker workflow executes; no new runtime pass is claimed by this record.
