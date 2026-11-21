@@ -7,6 +7,8 @@ import subprocess
 import unittest
 import tempfile
 import stat
+import sys
+import shlex
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -46,6 +48,46 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(janitor['volumes'][0]['source'], backend['volumes'][0]['source'])
         self.assertEqual(config['services']['db']['environment']['MYSQL_ROOT_PASSWORD_FILE'],
                          '/run/gcai/db_root_password')
+
+    def test_rendered_database_healthcheck_writes_valid_private_client_configuration(self):
+        health = self.render('compose.hosted.yml')['services']['db']['healthcheck']['test']
+        self.assertEqual(health[0], 'CMD-SHELL')
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            secret = directory / 'password'
+            secret.write_text('synthetic-test-password')
+            secret.chmod(0o600)
+            captured_path = directory / 'configuration-path'
+            stub = directory / 'mysql'
+            stub.write_text('#!' + sys.executable + '\n' + """
+import configparser,os,stat,sys
+from pathlib import Path
+arguments = sys.argv[1:]
+filename = next(arg.split('=',1)[1] for arg in arguments if arg.startswith('--defaults-extra-file='))
+path = Path(filename)
+assert stat.S_IMODE(path.stat().st_mode) == 0o600
+config = configparser.ConfigParser(interpolation=None)
+config.read(str(path))
+assert config.get('client','user') == 'root'
+assert config.get('client','password') == 'synthetic-test-password'
+assert '--protocol=TCP' in arguments and '-h127.0.0.1' in arguments
+assert arguments[-2:] == ['-e','SELECT 1']
+Path(os.environ['GCAI_CAPTURE_CONFIG']).write_text(filename)
+print(1)
+""")
+            stub.chmod(0o700)
+            # Compose's config serializer escapes dollars in normalized output.
+            command = health[1].replace('$$', '$').replace(
+                '/run/gcai/db_root_password', shlex.quote(str(secret)))
+            env = dict(os.environ, PATH=str(directory) + os.pathsep + os.environ['PATH'],
+                       GCAI_CAPTURE_CONFIG=str(captured_path))
+            process = subprocess.run(['/bin/sh','-c',command], env=env, capture_output=True, text=True)
+            self.assertEqual(process.returncode, 0, process.stderr)
+            self.assertFalse(Path(captured_path.read_text()).exists(), 'Private temporary client config leaked')
+            # The actual shell/parser probe also detects the hypothesized literal-backslash defect.
+            broken = command.replace('\\n', '\\\\n')
+            process = subprocess.run(['/bin/sh','-c',broken], env=env, capture_output=True, text=True)
+            self.assertNotEqual(process.returncode, 0)
 
     def test_secret_consumers_get_narrow_readonly_private_volumes(self):
         config = self.render('compose.hosted.yml')
