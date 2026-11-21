@@ -7,6 +7,8 @@ import subprocess
 import unittest
 import tempfile
 import stat
+from types import SimpleNamespace
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -93,6 +95,73 @@ class ConfigurationTests(unittest.TestCase):
         self.assertIn('ssl_protocols TLSv1.2 TLSv1.3;', config)
         self.assertIn("proxy_set_header Authorization '';", config)
         self.assertIn('access_log off;', config)
+
+    def test_legacy_import_secret_is_readable_after_mysql_uid_drop_and_removed(self):
+        spec = importlib.util.spec_from_file_location('import_assets', ROOT / 'scripts/import-assets.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        for fail_dump in (False, True):
+            with self.subTest(fail_dump=fail_dump), tempfile.TemporaryDirectory() as temporary:
+                directory = Path(temporary)
+                client = directory / 'legacy.cnf'
+                client.write_text('[client]\nuser=root\npassword=private-test-value\n')
+                client.chmod(0o600)
+                output = directory / 'assets'
+                captured = {'commands': [], 'removed': [], 'password': None}
+
+                def run(*arguments, **kwargs):
+                    captured['commands'].append(arguments)
+                    if arguments[0] == 'create' and '--entrypoint' in arguments:
+                        return SimpleNamespace(stdout='checkpoint-id')
+                    if arguments[0] == 'create':
+                        password_mount = next(arg for arg in arguments
+                                              if 'dst=/run/secrets/legacy-root-password,' in arg)
+                        password = Path(password_mount.split('src=', 1)[1].split(',', 1)[0])
+                        captured['password'] = password
+                        # File-only bind mounts bypass the private host parent directory.
+                        # mysql must be able to read it after the official UID drop.
+                        self.assertEqual(stat.S_IMODE(password.stat().st_mode), 0o444)
+                        self.assertEqual(stat.S_IMODE(password.parent.stat().st_mode), 0o700)
+                        self.assertEqual(password.read_text(), 'private-test-value')
+                        self.assertEqual(stat.S_IMODE(client.stat().st_mode), 0o600)
+                        self.assertIn('--user', arguments)
+                        self.assertIn('0:0', arguments)
+                        return SimpleNamespace(stdout='database-id')
+                    if arguments[0] == 'cp':
+                        Path(arguments[2]).write_bytes(b'trusted-checkpoint-fixture')
+                    elif arguments[0] == 'exec':
+                        self.assertEqual(arguments[1:3], ('--user', '0:0'))
+                        if fail_dump:
+                            raise subprocess.CalledProcessError(1, ['mysqldump'])
+                        kwargs['stdout'].write(b'CREATE TABLE parts (name TEXT);\n')
+                    return SimpleNamespace(returncode=0)
+
+                def subprocess_run(arguments, **kwargs):
+                    captured['commands'].append(tuple(arguments))
+                    if arguments[1] == 'exec':
+                        self.assertEqual(arguments[2:4], ['--user', '0:0'])
+                        return SimpleNamespace(returncode=0, stdout=b'1\n')
+                    if arguments[1] == 'rm':
+                        captured['removed'].append(arguments[-1])
+                        return SimpleNamespace(returncode=0)
+                    self.fail('Unexpected docker subprocess')
+
+                argv = ['import-assets', '--checkpoint-image', 'backend@sha256:' + 'a' * 64,
+                        '--database-image', 'database@sha256:' + 'b' * 64,
+                        '--checkpoint-path', '/models/checkpoint.pth', '--legacy-client-file', str(client),
+                        '--output', str(output)]
+                with patch.object(module, 'run', side_effect=run), \
+                        patch.object(module.subprocess, 'run', side_effect=subprocess_run), \
+                        patch('sys.argv', argv):
+                    if fail_dump:
+                        with self.assertRaises(subprocess.CalledProcessError):
+                            module.main()
+                    else:
+                        module.main()
+                self.assertFalse(captured['password'].exists())
+                self.assertCountEqual(captured['removed'], ['database-id', 'checkpoint-id'])
+                self.assertEqual((output / 'import-receipt.json').exists(), not fail_dump)
+                self.assertNotIn('private-test-value', repr(captured['commands']))
 
     def test_importer_requires_digest_and_never_starts_checkpoint(self):
         spec = importlib.util.spec_from_file_location('import_assets', ROOT / 'scripts/import-assets.py')

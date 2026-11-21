@@ -48,14 +48,17 @@ def main():
         stage = Path(temporary)
         password = stage / 'legacy-root-password'
         password.write_text(credentials.get('client', 'password'))
-        password.chmod(0o600)
+        # The database entrypoint may reopen _FILE after dropping to mysql.
+        # This ephemeral file-only bind must be readable by that UID. Its host
+        # parent remains 0700 and only this isolated database mounts the file.
+        password.chmod(0o444)
         try:
             # The checkpoint container is NEVER started; no pickle/application executes.
             checkpoint = run('create', '--network', 'none', '--entrypoint', '/bin/false',
                              args.checkpoint_image, capture_output=True, text=True).stdout.strip()
             containers.append(checkpoint)
             run('cp', f'{checkpoint}:{args.checkpoint_path}', str(stage / '160_model.pth'))
-            database = run('create', '--network', 'none',
+            database = run('create', '--network', 'none', '--user', '0:0',
                            '--env', 'MYSQL_ROOT_PASSWORD=',
                            '--env', 'MYSQL_ROOT_PASSWORD_FILE=/run/secrets/legacy-root-password',
                            '--mount', f'type=bind,src={password.resolve()},dst=/run/secrets/legacy-root-password,readonly',
@@ -65,7 +68,7 @@ def main():
             # Only the database entrypoint executes, isolated with no published ports.
             run('start', database, stdout=subprocess.DEVNULL)
             for attempt in range(120):
-                ready = subprocess.run(['docker', 'exec', database, 'mysql',
+                ready = subprocess.run(['docker', 'exec', '--user', '0:0', database, 'mysql',
                                         '--defaults-extra-file=/run/secrets/legacy.cnf',
                                         '--batch', '--skip-column-names', '-e', 'SELECT 1'],
                                        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
@@ -75,7 +78,7 @@ def main():
             else:
                 raise RuntimeError('Isolated legacy database did not become ready')
             with (stage / 'registry.sql').open('wb') as stream:
-                run('exec', database, 'mysqldump', '--defaults-extra-file=/run/secrets/legacy.cnf',
+                run('exec', '--user', '0:0', database, 'mysqldump', '--defaults-extra-file=/run/secrets/legacy.cnf',
                     '--single-transaction', '--skip-lock-tables', '--skip-triggers', '--no-tablespaces',
                     '--set-gtid-purged=OFF', 'iGEM2024', 'parts', stdout=stream)
             receipt = {'checkpoint_image': args.checkpoint_image, 'database_image': args.database_image,

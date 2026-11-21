@@ -50,8 +50,16 @@ Determine the checkpoint's absolute path by inspecting/exporting the pinned
 legacy image. The importer creates a stopped checkpoint container and copies
 only that file; it never executes its application or unpickles its checkpoint.
 It starts the legacy **database** image on `--network none`, publishes no ports,
-and dumps only `iGEM2024.parts` schema/data. It removes temporary containers and
-volumes on completion or failure. Review the legacy image's database entrypoint
+and dumps only `iGEM2024.parts` schema/data. The original client credentials stay
+0600 and are read only by explicit root client processes inside that container.
+For the official entrypoint's drop to the mysql UID, the importer creates an
+additional ephemeral root-password file with mode 0444 inside a private 0700
+host staging directory. Only this isolated legacy database receives that
+file-only read-only mount; the host parent prevents access by other local users.
+The temporary file is removed on success or failure after the container is
+removed. This scoped readability does not apply to deployed credentials, which
+use the separate consumer-owned 0400 volumes described below. It removes
+temporary containers and volumes on completion or failure. Review the legacy image's database entrypoint
 and checkpoint provenance before running:
 
 ```sh

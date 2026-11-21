@@ -9,7 +9,7 @@ v5.3.0. Commands executed from this repository:
 
 | Command | Result |
 | --- | --- |
-| `python3 -m unittest discover -s tests -v` | Exit 0; 6 passed, including independently rendered local and hosted Compose configuration |
+| `python3 -m unittest discover -s tests -v` | Exit 0; 7 passed, including independently rendered local and hosted Compose configuration, plus mocked legacy-import filesystem and cleanup paths |
 | `python3 -m py_compile scripts/import-assets.py scripts/prepare-secrets.py` | Exit 0 |
 | `bash -n scripts/10-import-registry.sh scripts/20-create-app-user.sh tests/docker-smoke.sh` | Exit 0 |
 | `sh -n scripts/backup.sh scripts/root-sql.sh` | Exit 0 |
@@ -29,3 +29,10 @@ trusted checkpoint provenance and execution, legacy import receipt with asset
 hashes, hosted authentication and inference smoke results, least-privilege grants,
 backup/restore outcome, janitor outcome, and actual credential-rotation receipt.
 Keep the deployment child and Epic #7 open until those are accepted.
+
+Follow-up importer regression reproduced failure for both successful-dump and
+failed-dump paths before the fix. The regression verifies the ephemeral file is
+0444 under a 0700 host parent while the original client file stays 0600, root
+client exec is explicit, containers and temporary credentials are removed on
+success/failure, and credential values never enter Docker command arguments.
+These are mocked Docker executions; real legacy-image import remains not_run.
