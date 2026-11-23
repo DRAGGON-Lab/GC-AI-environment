@@ -164,6 +164,8 @@ revision and exercises TLS authentication, fresh database migration, least
 privileges, HTTP routes, backup/restore, and artifact cleanup. A passing mocked
 inference test does not establish checkpoint/GPU readiness.
 
+Before hosted cutover, stop the old public GC-AI containers in their original Compose project while retaining its volumes for rollback. Verify that its backend and database port mappings are gone; a new isolated project does not remove services belonging to another project. Only the new TLS proxy should publish a port for GC-AI. Record this check in the operator receipt.
+
 ## Backup and restore
 
 ```sh
