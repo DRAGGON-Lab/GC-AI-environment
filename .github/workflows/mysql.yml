@@ -11,3 +11,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Fresh private MySQL migration and grants without detector build
         run: tests/mysql-smoke.sh
+  asset-import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import pinned synthetic legacy checkpoint and complete registry data
+        run: tests/asset-import-smoke.sh

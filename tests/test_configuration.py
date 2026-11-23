@@ -155,7 +155,7 @@ print(1)
                 client.write_text('[client]\nuser=root\npassword=private-test-value\n')
                 client.chmod(0o600)
                 output = directory / 'assets'
-                captured = {'commands': [], 'removed': [], 'password': None}
+                captured = {'commands': [], 'removed': [], 'password': None, 'ready_probes': 0}
 
                 def run(*arguments, **kwargs):
                     captured['commands'].append(arguments)
@@ -178,6 +178,7 @@ print(1)
                     if arguments[0] == 'cp':
                         Path(arguments[2]).write_bytes(b'trusted-checkpoint-fixture')
                     elif arguments[0] == 'exec':
+                        self.assertEqual(captured['ready_probes'], 2, 'Dump started before final server readiness')
                         self.assertEqual(arguments[1:3], ('--user', '0:0'))
                         if fail_dump:
                             raise subprocess.CalledProcessError(1, ['mysqldump'])
@@ -188,7 +189,10 @@ print(1)
                     captured['commands'].append(tuple(arguments))
                     if arguments[1] == 'exec':
                         self.assertEqual(arguments[2:4], ['--user', '0:0'])
-                        return SimpleNamespace(returncode=0, stdout=b'1\n')
+                        self.assertIn('@@GLOBAL.skip_networking', arguments[-1])
+                        captured['ready_probes'] += 1
+                        value = b'1\t1\n' if captured['ready_probes'] == 1 else b'1\t0\n'
+                        return SimpleNamespace(returncode=0, stdout=value)
                     if arguments[1] == 'rm':
                         captured['removed'].append(arguments[-1])
                         return SimpleNamespace(returncode=0)
@@ -200,7 +204,7 @@ print(1)
                         '--output', str(output)]
                 with patch.object(module, 'run', side_effect=run), \
                         patch.object(module.subprocess, 'run', side_effect=subprocess_run), \
-                        patch('sys.argv', argv):
+                        patch('sys.argv', argv), patch.object(module.time, 'sleep'):
                     if fail_dump:
                         with self.assertRaises(subprocess.CalledProcessError):
                             module.main()

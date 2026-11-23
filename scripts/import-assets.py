@@ -67,12 +67,16 @@ def main():
             containers.append(database)
             # Only the database entrypoint executes, isolated with no published ports.
             run('start', database, stdout=subprocess.DEVNULL)
+            # The official temporary initialization server accepts socket queries
+            # before registry import finishes, but runs with skip_networking=1.
+            # Wait for the final network-enabled server while retaining local
+            # socket authentication and the isolated no-network container.
             for attempt in range(120):
                 ready = subprocess.run(['docker', 'exec', '--user', '0:0', database, 'mysql',
                                         '--defaults-extra-file=/run/secrets/legacy.cnf',
-                                        '--batch', '--skip-column-names', '-e', 'SELECT 1'],
+                                        '--batch', '--skip-column-names', '-e', 'SELECT 1, @@GLOBAL.skip_networking'],
                                        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-                if ready.returncode == 0 and ready.stdout.strip() == b'1':
+                if ready.returncode == 0 and ready.stdout.strip() == b'1\t0':
                     break
                 time.sleep(2)
             else:

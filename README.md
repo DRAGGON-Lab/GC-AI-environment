@@ -59,7 +59,7 @@ file-only read-only mount; the host parent prevents access by other local users.
 The temporary file is removed on success or failure after the container is
 removed. This scoped readability does not apply to deployed credentials, which
 use the separate consumer-owned 0400 volumes described below. It removes
-temporary containers and volumes on completion or failure. Review the legacy image's database entrypoint
+temporary containers and volumes on completion or failure. Readiness waits until the final server reports `skip_networking=0`; the official temporary initialization server must not be mistaken for a completed registry import. The legacy image must start a network-enabled final MySQL server (the container itself remains isolated on `--network none`). Review the legacy image's database entrypoint
 and checkpoint provenance before running:
 
 ```sh
