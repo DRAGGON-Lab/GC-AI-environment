@@ -130,7 +130,7 @@ services:
           umask 077;
           config=$$(mktemp);
           trap 'rm -f "$$config"' EXIT;
-          printf '[client]\nuser=root\npassword=%s\n' "$$(cat /run/gcai/db_root_password)" > "$$config";
+          printf '[client]\nuser=gcai\npassword=%s\n' "$$(cat /run/gcai/db_app_password)" > "$$config";
           test "$$(mysql --defaults-extra-file="$$config" --protocol=TCP -h127.0.0.1 --batch --skip-column-names -e 'SELECT 1')" = 1
       interval: 10s
       timeout: 5s

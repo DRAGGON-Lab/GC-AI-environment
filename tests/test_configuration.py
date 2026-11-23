@@ -52,6 +52,8 @@ class ConfigurationTests(unittest.TestCase):
     def test_rendered_database_healthcheck_writes_valid_private_client_configuration(self):
         health = self.render('compose.hosted.yml')['services']['db']['healthcheck']['test']
         self.assertEqual(health[0], 'CMD-SHELL')
+        self.assertIn('/run/gcai/db_app_password', health[1])
+        self.assertNotIn('/run/gcai/db_root_password', health[1])
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             secret = directory / 'password'
@@ -68,7 +70,7 @@ path = Path(filename)
 assert stat.S_IMODE(path.stat().st_mode) == 0o600
 config = configparser.ConfigParser(interpolation=None)
 config.read(str(path))
-assert config.get('client','user') == 'root'
+assert config.get('client','user') == 'gcai'
 assert config.get('client','password') == 'synthetic-test-password'
 assert '--protocol=TCP' in arguments and '-h127.0.0.1' in arguments
 assert arguments[-2:] == ['-e','SELECT 1']
@@ -78,12 +80,16 @@ print(1)
             stub.chmod(0o700)
             # Compose's config serializer escapes dollars in normalized output.
             command = health[1].replace('$$', '$').replace(
-                '/run/gcai/db_root_password', shlex.quote(str(secret)))
+                '/run/gcai/db_app_password', shlex.quote(str(secret)))
             env = dict(os.environ, PATH=str(directory) + os.pathsep + os.environ['PATH'],
                        GCAI_CAPTURE_CONFIG=str(captured_path))
             process = subprocess.run(['/bin/sh','-c',command], env=env, capture_output=True, text=True)
             self.assertEqual(process.returncode, 0, process.stderr)
             self.assertFalse(Path(captured_path.read_text()).exists(), 'Private temporary client config leaked')
+            # A root TCP probe regresses the confirmed localhost-only root restriction.
+            wrong_user = command.replace('user=gcai', 'user=root')
+            process = subprocess.run(['/bin/sh','-c',wrong_user], env=env, capture_output=True, text=True)
+            self.assertNotEqual(process.returncode, 0)
             # The actual shell/parser probe also detects the hypothesized literal-backslash defect.
             broken = command.replace('\\n', '\\\\n')
             process = subprocess.run(['/bin/sh','-c',broken], env=env, capture_output=True, text=True)
