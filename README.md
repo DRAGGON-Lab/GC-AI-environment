@@ -9,7 +9,7 @@ its generated-document handles. Treat handles as credentials until their fixed
 
 ## Prerequisites and release inputs
 
-Use Docker Engine and Compose supporting `include` and `extends`. Build the
+Use Docker Engine and Compose supporting `include` and `extends`. The reviewed runtime lock targets Linux/amd64. Build the
 reviewed GC-AI source with its backend and frontend Dockerfiles, publish those
 images, and record immutable image digests and source revision. Do not use the
 old application images to serve traffic. Copy `.env.example` to `.env` and replace
@@ -144,7 +144,7 @@ local and hosted files: each includes shared
 services independently. Review rendered Compose before starting.
 
 For local development, set `GCAI_TRUSTED_ORIGINS=http://localhost:8081` and run
-`docker compose up -d`; only `127.0.0.1:8081` is published. Local mode still
+`docker compose up -d`; only `127.0.0.1:8081` is published. Set `GCAI_URL=http://localhost:8081/api` for the Python client, CLI and MCP. Local mode still
 requires database secrets and imported assets; it does not require TLS/htpasswd
 inputs. Local HTTP has no authentication and is intended solely for the local workstation.
 

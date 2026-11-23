@@ -1,0 +1,15 @@
+{
+  "source_revision": "ea6348ac25ebc8a5ebc494e3630873c9bed294ac",
+  "backend_image_id": "sha256:e140288ae578d95d012ee474e6322901dfc2b83c0636bfb837179191c1a9c333",
+  "frontend_image_id": "sha256:fcb141494447cd3c3e028358135ad5114cf6b5da132c1970f6dfc0db6e37af4d",
+  "mysql_image_digest": "mysql@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902",
+  "executed_at_unix": 1795434679.933759,
+  "readiness": "passed: mocked detector, real MySQL connector and consumed SELECT 1",
+  "hosted_tls_create_convert": "passed: authenticated wire requests, exact ZIP formats, sequences and coordinates",
+  "real_checkpoint_gpu": "not_run: deliberate CI placeholder",
+  "production_migration": "not_run",
+  "credential_rotation": "not_run",
+  "ci_run_url": "https://github.com/Gonza10V/GC-AI-environment/actions/runs/45167901039",
+  "environment_revision": "18befe0513f92d735666b313406a939f2db0375b",
+  "evidence_kind": "synthetic_ci_not_operator_receipt"
+}
