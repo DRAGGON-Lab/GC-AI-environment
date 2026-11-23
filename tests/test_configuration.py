@@ -49,6 +49,20 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(config['services']['db']['environment']['MYSQL_ROOT_PASSWORD_FILE'],
                          '/run/gcai/db_root_password')
 
+    def test_only_proxy_has_external_edge_for_published_ports(self):
+        for filename in ['docker-compose.yml', 'compose.hosted.yml']:
+            with self.subTest(profile=filename):
+                config = self.render(filename)
+                self.assertFalse(config['networks']['edge'].get('internal', False))
+                self.assertEqual(set(config['services']['proxy']['networks']), {'application','edge'})
+                for name, service in config['services'].items():
+                    if name != 'proxy':
+                        self.assertNotIn('edge', service.get('networks', {}), name)
+                        self.assertFalse(service.get('ports'), name)
+                for name in ['backend','db']:
+                    for network in config['services'][name]['networks']:
+                        self.assertTrue(config['networks'][network]['internal'])
+
     def test_rendered_database_healthcheck_writes_valid_private_client_configuration(self):
         health = self.render('compose.hosted.yml')['services']['db']['healthcheck']['test']
         self.assertEqual(health[0], 'CMD-SHELL')

@@ -137,7 +137,10 @@ docker compose -f compose.hosted.yml up -d
 
 The new database imports registry SQL and grants `gcai` only SELECT on
 `iGEM2024.parts`. No host port exists for backend or database. The only hosted
-port is 443. Never combine the local and hosted files: each includes shared
+port is 443. The proxy alone joins a normal `edge` bridge so Docker can publish
+its port, plus the private application network. Backend and database remain on
+internal networks, with no host ports or edge attachment. Never combine the
+local and hosted files: each includes shared
 services independently. Review rendered Compose before starting.
 
 For local development, set `GCAI_TRUSTED_ORIGINS=http://localhost:8081` and run

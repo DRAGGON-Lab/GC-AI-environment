@@ -143,6 +143,9 @@ volumes:
   registry84:
   artifacts:
 networks:
+  edge:
+    driver: bridge
+    internal: false
   application:
     internal: true
   registry:
