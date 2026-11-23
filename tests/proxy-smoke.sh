@@ -69,12 +69,12 @@ openssl req -x509 -newkey rsa:2048 -nodes -keyout secrets/tls.key -out secrets/t
 chmod 600 secrets/tls.*
 cat > probe-server.py <<'PY'
 from http.server import BaseHTTPRequestHandler,HTTPServer
-import json
+import json,threading,time
 class Handler(BaseHTTPRequestHandler):
     def log_message(self,*args):
         pass
     def do_GET(self):
-        status=200 if self.path=='/livez' else 404
+        status=200 if self.path in ('/livez','/stop-listening') else 404
         payload={'status':'alive','probe':'stdlib-stub'} if status==200 else {'error':'not_found'}
         body=json.dumps(payload).encode()
         self.send_response(status)
@@ -82,7 +82,14 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Content-Length',str(len(body)))
         self.end_headers()
         self.wfile.write(body)
-HTTPServer(('0.0.0.0',5001),Handler).serve_forever()
+        if self.path=='/stop-listening':
+            threading.Thread(target=self.server.shutdown,daemon=True).start()
+server=HTTPServer(('0.0.0.0',5001),Handler)
+server.serve_forever()
+server.server_close()
+# Retain the container network while the listener is closed, so connection
+# refusal is immediate rather than depending on Docker ARP/route expiration.
+time.sleep(600)
 PY
 chmod 644 probe-server.py
 cat > compose.probe.yml <<'YAML'
@@ -155,7 +162,8 @@ body=json.loads(Path('receipts/too-large.json').read_text())
 assert body['status_code']==413 and body['code']=='request_too_large'
 PY
 # The real proxy maps an unavailable upstream to the shared sanitized JSON contract.
-"${compose[@]}" stop backend > receipts/stop-backend.log 2>&1
+curl --config secrets/curl.conf --connect-timeout 2 --max-time 5 -fsS https://localhost/api/stop-listening >/dev/null
+sleep 1
 status=$(curl --config secrets/curl.conf --connect-timeout 2 --max-time 5 -sS \
  --output receipts/unavailable.json -w '%{http_code}' https://localhost/api/livez)
 [ "$status" = 503 ]
