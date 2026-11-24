@@ -89,3 +89,9 @@ and parsed FASTA/GenBank outputs. One browser-local synthetic503 exercised retry
 no partial download occurred and both selections/the same handle were retained.
 See verification/local-review-browser.json. Runtime npm audit is zero; the two
 remaining development-only Vite/esbuild advisories are documented by the app.
+
+The optional one-GPU overlay and GPU-required acceptance regression are now
+implemented. All14 environment checks pass; the application has10 independent
+cross-client/policy regressions. GPU hardware execution remains not_run. The
+permanent checkout retains ignored private assets/credentials, and its actual
+TLS runtime gate passed all nine checks again after relocation.

@@ -1,6 +1,6 @@
 {
   "evidence_kind": "review_runtime_checks",
-  "executed_at": "2026-11-24T09:29:20.952239+00:00",
+  "executed_at": "2026-11-24T10:39:02.379347+00:00",
   "checks": {
     "readiness_liveness": {
       "status": "passed"
@@ -34,8 +34,8 @@
   "database_credential_rotation": "not_run",
   "gpu_execution": "not_verified",
   "checkpoint_provenance": "not_verified",
-  "source_revision": "833971172d41b55203b87152b6d1d624f08b1732",
-  "source_fingerprint_sha256": "b20e9201e0352671e8483bdeaefc3a24baf4ffabc3837bc91a0a823a2e6509f7",
-  "source_dirty": true,
+  "source_revision": "03de5067c6b315a5408d204336e5872540361b13",
+  "source_fingerprint_sha256": "187e081f4774345d37feffc88320c1f14ea4cd73e5f99bab73493aec6343fd58",
+  "source_dirty": false,
   "result": "passed"
 }

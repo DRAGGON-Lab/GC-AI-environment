@@ -1,7 +1,7 @@
 {
   "evidence_kind": "real_checkpoint_route_replay",
   "checkpoint_sha256": "06ac3f64292ed93f49e296b60e32dab0b5b0182e86141b52ff43a253dba51749",
-  "executed_at": "2026-11-24T09:11:02.409152+00:00",
+  "executed_at": "2026-11-24T10:32:25.202978+00:00",
   "python": "3.12.16",
   "torch": "2.6.0+cpu",
   "torchvision": "0.21.0+cpu",
@@ -223,10 +223,11 @@
       "result": "passed"
     }
   ],
+  "gpu_required": false,
   "device": "cpu",
   "gpu_execution": false,
   "result": "passed",
-  "cpu_verifier_image_id": "sha256:8b7522cedd8969f8670f7f216a4ca8beea93d9536d2fe8cbc8c08568824a88f8",
-  "backend_sources_sha256": "50216fd7829e8b1372059066e2764fccb18c9415e54ad525d423115e0ce8e00b",
-  "verifier_sha256": "5e9936119bc014fd5fac691bbae3eb91ba96c1d05433c5eb596c79aa6eed9c31"
+  "verified_runtime_image_id": "sha256:c0f02126bd9e4ac8b0bf0918829b047803134fd191352a791224cef0adc6cf9f",
+  "verifier_sha256": "7a2413469bc33d3e7e61a45356fefb69ff37d670a95fdfdf2e5a40553594817d",
+  "backend_sources_sha256": "50216fd7829e8b1372059066e2764fccb18c9415e54ad525d423115e0ce8e00b"
 }

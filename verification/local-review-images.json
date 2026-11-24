@@ -5,5 +5,8 @@
   "backend_runtime": "CPU review image; not production CUDA image",
   "source_revision": "8339711 plus integration gate working tree",
   "gpu_execution": false,
-  "frontend_runtime_audit": "zero findings after router/patch updates"
+  "frontend_runtime_audit": "zero findings after router/patch updates",
+  "backend_source_base": "fcde1215abf2460ff5cddf6d9d5ce6588b774f19",
+  "frontend_source_commit": "9dcbdd0",
+  "source_revision_note": "Runtime/source fingerprints and exact image IDs identify executed snapshots; later acceptance-tool/evidence commits do not change backend code."
 }
