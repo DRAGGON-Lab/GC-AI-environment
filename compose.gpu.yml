@@ -1,0 +1,10 @@
+# Optional production CUDA overlay; use with compose.hosted.yml on a GPU host.
+services:
+  backend:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

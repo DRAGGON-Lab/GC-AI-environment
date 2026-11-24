@@ -16,15 +16,29 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ConfigurationTests(unittest.TestCase):
-    def render(self, filename):
+    def render(self, filename, *overrides):
         env = dict(os.environ,
                    GCAI_BACKEND_IMAGE='example/backend@sha256:' + '0' * 64,
                    GCAI_FRONTEND_IMAGE='example/frontend@sha256:' + '0' * 64,
                    GCAI_MYSQL_IMAGE='mysql:8.4@sha256:' + '0' * 64,
                    GCAI_TRUSTED_ORIGINS='https://example.test')
-        result = subprocess.run(['docker', 'compose', '-f', filename, 'config', '--format', 'json'],
+        command = ['docker', 'compose', '-f', filename]
+        for override in overrides:
+            command += ['-f', override]
+        result = subprocess.run(command + ['config', '--format', 'json'],
                                 cwd=ROOT, env=env, capture_output=True, text=True, check=True)
         return json.loads(result.stdout)
+
+    def test_gpu_overlay_requests_one_backend_device_only(self):
+        config = self.render('compose.hosted.yml', 'compose.gpu.yml')
+        devices = config['services']['backend']['deploy']['resources']['reservations']['devices']
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(devices[0]['driver'], 'nvidia')
+        self.assertEqual(devices[0]['count'], 1)
+        self.assertEqual(devices[0]['capabilities'], ['gpu'])
+        for name, service in config['services'].items():
+            if name != 'backend':
+                self.assertFalse(service.get('deploy'), name)
 
     def test_mysql_init_scripts_use_prepared_non_executable_volume(self):
         config = self.render('compose.hosted.yml')

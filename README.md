@@ -286,3 +286,15 @@ This avoids Docker Desktop host-bind execute-bit differences and ensures officia
 MySQL initialization sources the helpers. No backend/database port is published
 by the review profile. Existing volume initialization is not rerun on restart;
 use a fresh project for testing bootstrap fixes and retain earlier data for review.
+
+
+## GPU acceptance on an equipped production host
+
+The default review stack is CPU-only. Build the production backend image and use
+`docker compose -f compose.hosted.yml -f compose.gpu.yml up -d` on a host with the
+NVIDIA driver/container runtime. The overlay requests exactly one backend GPU;
+auxiliary containers receive none. Keep the overlay on backend recreate commands.
+See [Docker's GPU requirements](https://docs.docker.com/compose/how-tos/gpu-support/).
+Run the application's checkpoint verifier in that runtime with `--require-gpu`:
+CPU fallback then fails rather than counting as GPU evidence. No GPU execution
+has been performed by this local CPU review.
