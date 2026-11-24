@@ -1,0 +1,14 @@
+{
+  "evidence_kind": "local_review_credential_rotation",
+  "project": "gcai-review-v2",
+  "executed_at": "2026-11-24T09:28:27.493862+00:00",
+  "database_credentials": {
+    "new_root_credential": "accepted",
+    "old_root_credential": "denied",
+    "new_gcai_credential": "accepted",
+    "old_gcai_credential": "denied"
+  },
+  "workspace_password_rotated": true,
+  "workspace_old_rejection": "passed: authenticated runtime gate rejected previous workspace credential",
+  "production_credential_rotation": "not_run"
+}

@@ -1,0 +1,37 @@
+# Disposable loopback-only SBOL DB for live conformance review.
+services:
+  registry-init:
+    image: ghcr.io/marpaia/sbol-db@sha256:ec35a160248e1db1b50e2a55c251e140c6f2f6c0d5781822b5140aa475af759b
+    platform: linux/amd64
+    working_dir: /var/lib/sbol-db
+    command: ['db', 'migrate']
+    environment:
+      DATABASE_URL: sqlite:///var/lib/sbol-db/review.db
+    volumes:
+      - registry-review:/var/lib/sbol-db
+    network_mode: none
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+  registry:
+    image: ghcr.io/marpaia/sbol-db@sha256:ec35a160248e1db1b50e2a55c251e140c6f2f6c0d5781822b5140aa475af759b
+    platform: linux/amd64
+    working_dir: /var/lib/sbol-db
+    environment:
+      DATABASE_URL: sqlite:///var/lib/sbol-db/review.db
+    volumes:
+      - registry-review:/var/lib/sbol-db
+    ports:
+      - '127.0.0.1:18899:8080'
+    depends_on:
+      registry-init:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+volumes:
+  registry-review:

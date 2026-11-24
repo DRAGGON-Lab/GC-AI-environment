@@ -1,0 +1,12 @@
+{
+  "checkpoint_image": "cvtalrc/gc-ai-backend@sha256:ca69a541fb8b9cecec88764b36e19274d058f8407078f6efa0320a89c9ebd37a",
+  "layer": "sha256:a6476017a2f9511cae5e4edd034507402c7cdfa628304205770b1ac267f4f8f2",
+  "checkpoint_path": "/app/app/models/model_files/160_model.pth",
+  "checkpoint_sha256": "06ac3f64292ed93f49e296b60e32dab0b5b0182e86141b52ff43a253dba51749",
+  "checkpoint_bytes": 518726586,
+  "application_executed": false,
+  "checkpoint_deserialized": false,
+  "method": "checkpoint-only extraction from SHA256-verified OCI layer; manifest and subsequent overlay layers verified; no application execution",
+  "manifest_verified": true,
+  "subsequent_layers_verified_unmodified": true
+}

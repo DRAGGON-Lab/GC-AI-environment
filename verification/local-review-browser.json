@@ -1,0 +1,27 @@
+{
+  "evidence_kind": "real_browser_bootstrap",
+  "role_queries": {
+    "Aptamer-RNA": 200,
+    "Aptamer-DNA": 200,
+    "Ncrna": 200,
+    "Inert-DNA-Spacer": 200,
+    "PolyA-Site": 200,
+    "Promoter": 200,
+    "CDS": 200,
+    "RBS": 200,
+    "Primer-Binding-Site": 200,
+    "Operator": 200,
+    "Origin-Of-Transfer": 200,
+    "Origin-Of-Replication": 200,
+    "Terminator": 200,
+    "Engineered-Region": 200
+  },
+  "javascript_errors": [],
+  "result": "passed",
+  "conversion_stage": "convert_retry",
+  "configuring_part_index": 2,
+  "real_image_upload": "passed",
+  "real_sbol_fasta_genbank_downloads": "passed: parsed exact sequences and coordinates",
+  "conversion_retry": "passed: one synthetic503 followed by real server success; same handle and format selection retained; no partial download",
+  "browser_version": "159.0.8154.6"
+}

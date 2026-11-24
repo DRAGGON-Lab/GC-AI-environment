@@ -1,0 +1,9 @@
+{
+  "backend_image_id": "sha256:c0f02126bd9e4ac8b0bf0918829b047803134fd191352a791224cef0adc6cf9f",
+  "frontend_image_id": "sha256:90ca2412a567a747fb32b3e8b5d4627666287e07a7bb667851b9c9075d352805",
+  "mysql_image_digest": "mysql@sha256:8c233bad33d520a7aae1c1e619c3a9775f4a1ba2d463d692fada04ec7f40be00",
+  "backend_runtime": "CPU review image; not production CUDA image",
+  "source_revision": "8339711 plus integration gate working tree",
+  "gpu_execution": false,
+  "frontend_runtime_audit": "zero findings after router/patch updates"
+}

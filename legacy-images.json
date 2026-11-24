@@ -1,0 +1,14 @@
+{
+  "source_repository": "DRAGGON-Lab/GC-AI-environment",
+  "source_revision": "2646936",
+  "platform": "linux/amd64",
+  "checkpoint_image": "cvtalrc/gc-ai-backend@sha256:ca69a541fb8b9cecec88764b36e19274d058f8407078f6efa0320a89c9ebd37a",
+  "database_image": "cvtalrc/gc-ai-db@sha256:ff285f1370a7ee900d871c0a621232d3de29ecc39afd096d342f30449d89a695",
+  "checkpoint_path": "/app/app/models/model_files/160_model.pth",
+  "asset_import": "passed: real checkpoint extraction and isolated legacy parts export",
+  "checkpoint_sha256": "06ac3f64292ed93f49e296b60e32dab0b5b0182e86141b52ff43a253dba51749",
+  "checkpoint_bytes": 518726586,
+  "checkpoint_extraction": "passed: manifest, source layer and subsequent overlay SHA256 verified; no application execution or checkpoint deserialization",
+  "registry_sha256": "e869efcaa5bc37bc68065bb90eb48136d7319c1d52aec5a20dcdf4f045aa1766",
+  "registry_rows": 84285
+}
