@@ -216,8 +216,9 @@ An operator must execute and record rotation; code changes are insufficient.
 This repository and the Epic #7 deployment child remain open until the two
 reviewed source releases are coordinated and an operator accepts the environment
 PR, Docker smoke evidence, real checkpoint/GPU readiness where deployed, asset
-import receipt, and actual credential-rotation receipt. The implementation
-session had no Docker daemon: no production migration or rotation is claimed.
+import receipt, and actual credential-rotation receipt. The initial implementation had no Docker daemon. Subsequent local Docker
+verification and owner approval are recorded under `verification`; no production
+migration or production rotation is claimed.
 
 
 ## Local authenticated review (DRAGGON-Lab repository)
@@ -273,9 +274,10 @@ cd /path/to/GC-AI/client
 SBOL_DB_URL=http://127.0.0.1:18899 python -m pytest tests/test_storage_integration.py -m integration
 ```
 
-On 24 November 2026 the actual pinned image passed five live publication,
-zero-finding conformance, readback, SBOL2 conversion and overwrite checks; the
-sixth test requiring a running GC-AI service was skipped explicitly. Source
+On 24 November 2026 the final live suite passed all 22 cases with no live tests
+skipped, including all six storage checks against the actual pinned image and
+running GC-AI service. The earlier registry-only run passed five storage checks
+and skipped the service-to-registry case before the review service was running. Source
 fixtures were the regenerated documents, preserving historical XML unchanged.
 After review, stop the disposable registry and remove only its temporary volume
 when no longer needed. Do not apply that cleanup to production volumes.
@@ -298,3 +300,6 @@ See [Docker's GPU requirements](https://docs.docker.com/compose/how-tos/gpu-supp
 Run the application's checkpoint verifier in that runtime with `--require-gpu`:
 CPU fallback then fails rather than counting as GPU evidence. No GPU execution
 has been performed by this local CPU review.
+
+Owner acceptance of the local review and the remaining production gates are
+recorded in [verification/review-approval.md](verification/review-approval.md).
