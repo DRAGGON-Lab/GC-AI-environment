@@ -303,3 +303,37 @@ has been performed by this local CPU review.
 
 Owner acceptance of the local review and the remaining production gates are
 recorded in [verification/review-approval.md](verification/review-approval.md).
+
+## CPU research candidate follow-up
+
+Use Python 3.12 and OpenSSL 3 for local tooling. The host default Python/LibreSSL
+on older macOS installations does not satisfy those prerequisites.
+
+Both source repositories share `docs/release/release-manifest.schema.json`.
+Use the reviewed manifest to set image and asset identities. Preparation verifies
+checkpoint and registry bytes while copying into private consumer volumes; the
+application also verifies the checkpoint immediately before deserialization.
+Expected hashes are mandatory, and private asset mounts remain read-only.
+
+Checkpoint-only import without downloading the entire legacy backend image:
+
+```sh
+python scripts/import-checkpoint.py \
+ --image cvtalrc/gc-ai-backend@sha256:ca69a541fb8b9cecec88764b36e19274d058f8407078f6efa0320a89c9ebd37a \
+ --layer sha256:a6476017a2f9511cae5e4edd034507402c7cdfa628304205770b1ac267f4f8f2 \
+ --path /app/app/models/model_files/160_model.pth \
+ --sha256 06ac3f64292ed93f49e296b60e32dab0b5b0182e86141b52ff43a253dba51749 \
+ --output /private/new/160_model.pth
+```
+
+The importer checks manifest/layer digests, the extracted asset hash and later
+layer overlays/whiteouts. It never starts the legacy application or deserializes
+its checkpoint. Pass this file and approved hash to `scripts/import-assets.py`
+using `--checkpoint-file` and `--checkpoint-sha256` to import the registry without
+pulling the entire backend image. Existing approved assets can be reused by hash.
+
+Both proxy profiles use Docker DNS re-resolution in a shared upstream zone.
+`tests/proxy-smoke.sh` forces a different backend IP and verifies authenticated
+API recovery within fifteen seconds without restarting/replacing the proxy.
+The test uses an explicit stdlib backend stub; real detector readiness is a
+separate channel. A local run passed and its receipt is in `receipts/`.

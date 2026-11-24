@@ -95,3 +95,24 @@ implemented. All14 environment checks pass; the application has10 independent
 cross-client/policy regressions. GPU hardware execution remains not_run. The
 permanent checkout retains ignored private assets/credentials, and its actual
 TLS runtime gate passed all nine checks again after relocation.
+
+## Epic #8 CPU candidate companion
+
+Baseline `29378b9a0e57`; canonical repository DRAGGON-Lab/GC-AI-environment.
+Python 3.12 + OpenSSL 3: all 16 daemon-independent tests passed. Layer import
+regressions cover tampered blobs, changed target files, whiteouts, opaque parent
+directories and normalized path aliases. Prepared asset copies verify hashes
+before replacing consumer files. Application startup receives the same expected
+checkpoint identity from the release inputs.
+
+The isolated TLS proxy smoke passed with an explicit stdlib backend stub.
+Replacement changed backend IP and restored authenticated API access in
+4.649 seconds while retaining the same proxy container/start time. See
+`receipts/proxy-recovery.json`. Both profiles share the same Docker DNS resolving
+upstream. The smoke removed its own temporary project and volumes afterward.
+This is proxy evidence, not detector or production migration evidence.
+
+CPU release publication still requires reviewed complete candidate evidence,
+approved new benchmark labels/captures and owner scientific acceptance. Existing
+review services and database/rollback volumes were preserved. The shared manifest
+schema must remain byte-identical to the coordinated application PR.

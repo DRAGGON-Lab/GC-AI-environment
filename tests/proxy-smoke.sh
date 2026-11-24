@@ -45,6 +45,7 @@ cleanup() {
         fi
         python3 sanitize.py receipts/up.log receipts/services.log receipts/proxy-failure.json receipts/curl.log
     fi
+    if [ -n "${holder:-}" ]; then docker rm -f "$holder" >/dev/null 2>&1; fi
     "${compose[@]}" down -v --remove-orphans > receipts/cleanup.log 2>&1
     rm -rf "$workspace"
     exit "$result"
@@ -114,6 +115,8 @@ export GCAI_MYSQL_UID=$(docker run --rm --network none --entrypoint id "$GCAI_MY
 export GCAI_MYSQL_GID=$(docker run --rm --network none --entrypoint id "$GCAI_MYSQL_IMAGE" -g mysql)
 export GCAI_NGINX_UID=$(docker run --rm --network none --entrypoint id "$GCAI_FRONTEND_IMAGE" -u nginx)
 export GCAI_NGINX_GID=$(docker run --rm --network none --entrypoint id "$GCAI_FRONTEND_IMAGE" -g nginx)
+export GCAI_EXPECTED_CHECKPOINT_SHA256=$(shasum -a 256 assets/160_model.pth | cut -d ' ' -f1)
+export GCAI_EXPECTED_REGISTRY_SHA256=$(shasum -a 256 assets/registry.sql | cut -d ' ' -f1)
 "${compose[@]}" config --quiet
 "${compose[@]}" up -d > receipts/up.log 2>&1
 proxy_id=$("${compose[@]}" ps -q proxy)
@@ -150,6 +153,50 @@ import json
 assert 'Welcome to nginx!' in Path('receipts/frontend.html').read_text()
 assert json.loads(Path('receipts/live.json').read_text()) == {'status':'alive','probe':'stdlib-stub'}
 PY
+# Force a different backend IP by reserving its old address during replacement.
+backend_id=$("${compose[@]}" ps -q backend)
+application_network=$(docker inspect "$backend_id" --format '{{range $name, $config := .NetworkSettings.Networks}}{{$name}} {{end}}' | tr ' ' '\n' | sed -n '/_application$/p')
+old_ip=$(docker inspect "$backend_id" --format "{{with index .NetworkSettings.Networks \"$application_network\"}}{{.IPAddress}}{{end}}")
+proxy_started=$(docker inspect "$proxy_id" --format '{{.State.StartedAt}}')
+replacement_started=$(python3 -c "import time; print(time.monotonic())")
+"${compose[@]}" stop --timeout 1 backend >/dev/null
+"${compose[@]}" rm -f backend >/dev/null
+holder="${COMPOSE_PROJECT_NAME}-old-ip"
+docker run -d --name "$holder" --network "$application_network" --ip "$old_ip" --entrypoint sleep "$GCAI_BACKEND_IMAGE" 60 >/dev/null
+"${compose[@]}" up -d --no-deps backend >/dev/null
+new_backend=$("${compose[@]}" ps -q backend)
+new_ip=$(docker inspect "$new_backend" --format "{{with index .NetworkSettings.Networks \"$application_network\"}}{{.IPAddress}}{{end}}")
+[ "$new_ip" != "$old_ip" ]
+recovered=false
+while python3 - "$replacement_started" <<'PYDEADLINE'
+import sys,time
+raise SystemExit(0 if time.monotonic()-float(sys.argv[1])<15 else 1)
+PYDEADLINE
+do
+    if curl --config secrets/curl.conf --connect-timeout 1 --max-time 2 -fsS https://localhost/api/livez >/dev/null 2>&1; then recovered=true; break; fi
+    sleep 1
+done
+[ "$recovered" = true ]
+[ "$("${compose[@]}" ps -q proxy)" = "$proxy_id" ]
+[ "$(docker inspect "$proxy_id" --format '{{.State.StartedAt}}')" = "$proxy_started" ]
+replacement_seconds=$(python3 - "$replacement_started" <<'PYELAPSED'
+import sys,time
+elapsed=time.monotonic()-float(sys.argv[1])
+if elapsed>15:raise SystemExit('Proxy recovery exceeded fifteen seconds')
+print(elapsed)
+PYELAPSED
+)
+mkdir -p "$repository/receipts"
+python3 - "$old_ip" "$new_ip" "$replacement_seconds" "$proxy_id" <<'PYRECEIPT'
+import json,sys
+from pathlib import Path
+Path('receipts/proxy-recovery.json').write_text(json.dumps({'evidence_kind':'authenticated_proxy_with_stdlib_backend',
+ 'old_ip':sys.argv[1],'new_ip':sys.argv[2],'recovery_seconds':float(sys.argv[3]),'proxy_container':sys.argv[4],
+ 'proxy_restarted':False,'result':'passed'},indent=2)+'\n')
+PYRECEIPT
+cp receipts/proxy-recovery.json "$repository/receipts/proxy-recovery.json"
+docker rm -f "$holder" >/dev/null
+holder=''
 # Reject an oversized declared body without allocating/uploading a large fixture.
 status=$(curl --config secrets/curl.conf --connect-timeout 2 --max-time 5 -sS \
  --request POST --header 'Content-Length: 12582913' --data-binary '' \

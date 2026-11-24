@@ -1,0 +1,9 @@
+{
+  "evidence_kind": "authenticated_proxy_with_stdlib_backend",
+  "old_ip": "172.23.0.2",
+  "new_ip": "172.23.0.4",
+  "recovery_seconds": 4.649105443968438,
+  "proxy_container": "2821770f0ae6502dbdbbf893aa08a61d98598569220a5df309a7c44014685303",
+  "proxy_restarted": false,
+  "result": "passed"
+}

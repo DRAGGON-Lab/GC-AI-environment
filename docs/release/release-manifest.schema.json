@@ -1,0 +1,299 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/DRAGGON-Lab/GC-AI/blob/main/docs/release/release-manifest.schema.json",
+  "title": "GC-AI CPU research candidate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "candidate",
+    "channel",
+    "platform",
+    "sources",
+    "images",
+    "artifacts",
+    "checkpoint_sha256",
+    "registry_sha256",
+    "dataset_sha256",
+    "qualification",
+    "scientific_acceptance",
+    "accepted_limitations",
+    "gpu_qualified",
+    "image_archives"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "candidate": {
+      "type": "string",
+      "pattern": "^rc-cpu-[a-f0-9]{12}-[a-f0-9]{12}$"
+    },
+    "channel": {
+      "enum": [
+        "cpu-research",
+        "public-private-deployment"
+      ]
+    },
+    "platform": {
+      "const": "linux/amd64"
+    },
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "application",
+        "environment"
+      ],
+      "properties": {
+        "application": {
+          "$ref": "#/$defs/revision"
+        },
+        "environment": {
+          "$ref": "#/$defs/revision"
+        }
+      }
+    },
+    "images": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "backend",
+        "frontend",
+        "mysql",
+        "registry"
+      ],
+      "properties": {
+        "backend": {
+          "$ref": "#/$defs/image"
+        },
+        "frontend": {
+          "$ref": "#/$defs/image"
+        },
+        "mysql": {
+          "type": "string",
+          "pattern": "^mysql(:8\\.4)?@sha256:[a-f0-9]{64}$"
+        },
+        "registry": {
+          "type": "string",
+          "pattern": "^ghcr\\.io/marpaia/sbol-db@sha256:[a-f0-9]{64}$"
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "sha256"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.+-]+\\.(whl|tar\\.gz)$"
+          },
+          "sha256": {
+            "$ref": "#/$defs/sha256"
+          }
+        }
+      }
+    },
+    "checkpoint_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "dataset_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "qualification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "core",
+        "installed_artifacts",
+        "real_cpu",
+        "benchmark",
+        "python_cli_mcp_notebook",
+        "browser",
+        "dual_validator",
+        "authentication_origins_admission",
+        "registry_grants",
+        "backup_restore",
+        "janitor",
+        "proxy_replacement",
+        "independent_reviews",
+        "merge_protection"
+      ],
+      "properties": {
+        "core": {
+          "$ref": "#/$defs/evidence"
+        },
+        "installed_artifacts": {
+          "$ref": "#/$defs/evidence"
+        },
+        "real_cpu": {
+          "$ref": "#/$defs/evidence"
+        },
+        "benchmark": {
+          "$ref": "#/$defs/evidence"
+        },
+        "python_cli_mcp_notebook": {
+          "$ref": "#/$defs/evidence"
+        },
+        "browser": {
+          "$ref": "#/$defs/evidence"
+        },
+        "dual_validator": {
+          "$ref": "#/$defs/evidence"
+        },
+        "authentication_origins_admission": {
+          "$ref": "#/$defs/evidence"
+        },
+        "registry_grants": {
+          "$ref": "#/$defs/evidence"
+        },
+        "backup_restore": {
+          "$ref": "#/$defs/evidence"
+        },
+        "janitor": {
+          "$ref": "#/$defs/evidence"
+        },
+        "proxy_replacement": {
+          "$ref": "#/$defs/evidence"
+        },
+        "independent_reviews": {
+          "$ref": "#/$defs/evidence"
+        },
+        "merge_protection": {
+          "$ref": "#/$defs/evidence"
+        }
+      }
+    },
+    "scientific_acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accepted",
+        "reviewer",
+        "report_sha256",
+        "accepted_at"
+      ],
+      "properties": {
+        "accepted": {
+          "type": "boolean"
+        },
+        "reviewer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "report_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "accepted_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "accepted_limitations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "gpu_qualified": {
+      "const": false
+    },
+    "registry_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "image_archives": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "backend",
+        "frontend"
+      ],
+      "properties": {
+        "backend": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "sha256"
+          ],
+          "properties": {
+            "name": {
+              "const": "backend.oci.tar"
+            },
+            "sha256": {
+              "$ref": "#/$defs/sha256"
+            }
+          }
+        },
+        "frontend": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "sha256"
+          ],
+          "properties": {
+            "name": {
+              "const": "frontend.oci.tar"
+            },
+            "sha256": {
+              "$ref": "#/$defs/sha256"
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "revision": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "image": {
+      "type": "string",
+      "pattern": "^ghcr\\.io/draggon-lab/gc-ai-[a-z0-9-]+@sha256:[a-f0-9]{64}$"
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "report",
+        "sha256"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "passed",
+            "failed",
+            "not_run"
+          ]
+        },
+        "report": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

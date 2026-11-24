@@ -21,7 +21,9 @@ class ConfigurationTests(unittest.TestCase):
                    GCAI_BACKEND_IMAGE='example/backend@sha256:' + '0' * 64,
                    GCAI_FRONTEND_IMAGE='example/frontend@sha256:' + '0' * 64,
                    GCAI_MYSQL_IMAGE='mysql:8.4@sha256:' + '0' * 64,
-                   GCAI_TRUSTED_ORIGINS='https://example.test')
+                   GCAI_TRUSTED_ORIGINS='https://example.test',
+                   GCAI_EXPECTED_CHECKPOINT_SHA256='0' * 64,
+                   GCAI_EXPECTED_REGISTRY_SHA256='0' * 64)
         command = ['docker', 'compose', '-f', filename]
         for override in overrides:
             command += ['-f', override]

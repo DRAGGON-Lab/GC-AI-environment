@@ -5,6 +5,8 @@ services:
     user: '0:0'
     entrypoint: ['python', '/bootstrap/prepare-secrets.py']
     environment:
+      GCAI_EXPECTED_CHECKPOINT_SHA256: ${GCAI_EXPECTED_CHECKPOINT_SHA256:?Set the reviewed checkpoint SHA256}
+      GCAI_EXPECTED_REGISTRY_SHA256: ${GCAI_EXPECTED_REGISTRY_SHA256:?Set the reviewed registry SHA256}
       GCAI_UID: ${GCAI_UID:-10001}
       GCAI_GID: ${GCAI_GID:-10001}
       GCAI_MYSQL_UID: ${GCAI_MYSQL_UID:-999}
@@ -66,6 +68,7 @@ services:
       DB_PASSWORD_FILE: /run/gcai/db_app_password
       GCAI_ARTIFACT_DIR: /var/lib/gcai/artifacts
       GCAI_MODEL_PATH: /run/gcai/160_model.pth
+      GCAI_EXPECTED_CHECKPOINT_SHA256: ${GCAI_EXPECTED_CHECKPOINT_SHA256:?Set the reviewed checkpoint SHA256}
       GCAI_TRUSTED_ORIGINS: ${GCAI_TRUSTED_ORIGINS:?Set the exact browser origin}
       GCAI_MAX_REQUEST_BYTES: '12582912'
     volumes:

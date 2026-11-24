@@ -31,6 +31,7 @@ PY
 openssl req -x509 -newkey rsa:2048 -nodes -keyout secrets/tls.key -out secrets/tls.crt -days 1 -subj /CN=localhost -addext subjectAltName=DNS:localhost >/dev/null 2>&1
 chmod 600 secrets/tls.*
 docker build -f "$source_dir/backend/Dockerfile" -t gcai-backend-smoke "$source_dir"
+docker build --target test -f "$source_dir/backend/Dockerfile" -t gcai-backend-smoke-test "$source_dir"
 docker build -f "$source_dir/frontend/Dockerfile" -t gcai-frontend-smoke "$source_dir"
 docker pull mysql:8.4
 export GCAI_BACKEND_IMAGE=$(docker image inspect gcai-backend-smoke --format '{{.Id}}')
@@ -40,6 +41,8 @@ export GCAI_MYSQL_UID=$(docker run --rm --network none --entrypoint id "$GCAI_MY
 export GCAI_MYSQL_GID=$(docker run --rm --network none --entrypoint id "$GCAI_MYSQL_IMAGE" -g mysql)
 export GCAI_NGINX_UID=$(docker run --rm --network none --entrypoint id "$GCAI_FRONTEND_IMAGE" -u nginx)
 export GCAI_NGINX_GID=$(docker run --rm --network none --entrypoint id "$GCAI_FRONTEND_IMAGE" -g nginx)
+export GCAI_EXPECTED_CHECKPOINT_SHA256=$(shasum -a 256 assets/160_model.pth | cut -d ' ' -f1)
+export GCAI_EXPECTED_REGISTRY_SHA256=$(shasum -a 256 assets/registry.sql | cut -d ' ' -f1)
 docker compose -f compose.hosted.yml config --quiet
 docker compose -f compose.hosted.yml up -d
 for attempt in $(seq 1 90); do
@@ -147,9 +150,9 @@ assert not (Path(store.root)/handle).exists()
 print('Production cleanup command removed expired artifact')
 PY
 # Run actual route and archive semantics using source tests inside the image.
-docker compose -f compose.hosted.yml run --rm -T --no-deps --entrypoint python \
+docker run --rm --network none --entrypoint python \
  -v "$(cd "$source_dir" && pwd):/source:ro" \
- backend -m pytest /source/backend/tests/test_namespaces.py /source/backend/tests/test_artifacts.py /source/backend/tests/test_conversion_handles.py -q --disable-warnings
+ gcai-backend-smoke-test -m pytest /source/backend/tests/test_namespaces.py /source/backend/tests/test_artifacts.py /source/backend/tests/test_conversion_handles.py -q --disable-warnings
 python3 - <<'PY'
 import json,os,time
 from pathlib import Path
