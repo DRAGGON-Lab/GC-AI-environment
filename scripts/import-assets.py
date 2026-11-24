@@ -11,6 +11,7 @@ import subprocess
 import stat
 import tempfile
 import time
+import shutil
 
 
 def run(*arguments, **kwargs):
@@ -26,6 +27,8 @@ def pinned(value):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--checkpoint-image', required=True, type=pinned)
+    parser.add_argument('--checkpoint-file', type=Path, help='Previously layer-verified local checkpoint; avoids pulling the full backend image')
+    parser.add_argument('--checkpoint-sha256', help='Required for a pre-imported checkpoint')
     parser.add_argument('--database-image', required=True, type=pinned)
     parser.add_argument('--checkpoint-path', required=True, help='Absolute path inside the legacy image')
     parser.add_argument('--legacy-client-file', required=True, type=Path,
@@ -54,10 +57,18 @@ def main():
         password.chmod(0o444)
         try:
             # The checkpoint container is NEVER started; no pickle/application executes.
-            checkpoint = run('create', '--network', 'none', '--entrypoint', '/bin/false',
-                             args.checkpoint_image, capture_output=True, text=True).stdout.strip()
-            containers.append(checkpoint)
-            run('cp', f'{checkpoint}:{args.checkpoint_path}', str(stage / '160_model.pth'))
+            if args.checkpoint_file:
+                if not re.fullmatch('[0-9a-f]{64}', args.checkpoint_sha256 or ''):
+                    parser.error('--checkpoint-file requires the reviewed --checkpoint-sha256')
+                shutil.copyfile(args.checkpoint_file, stage / '160_model.pth')
+                with (stage / '160_model.pth').open('rb') as source:
+                    if hashlib.file_digest(source, 'sha256').hexdigest() != args.checkpoint_sha256:
+                        raise ValueError('Pre-imported checkpoint identity differs from the release manifest')
+            else:
+                checkpoint = run('create', '--network', 'none', '--entrypoint', '/bin/false',
+                                 args.checkpoint_image, capture_output=True, text=True).stdout.strip()
+                containers.append(checkpoint)
+                run('cp', f'{checkpoint}:{args.checkpoint_path}', str(stage / '160_model.pth'))
             database = run('create', '--network', 'none', '--user', '0:0',
                            '--env', 'MYSQL_DATABASE=iGEM2024',
                            '--env', 'MYSQL_ROOT_PASSWORD=',

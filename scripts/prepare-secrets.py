@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """Copy mounted operator inputs into private volumes owned by their consumers."""
 import os
+import hashlib
+import hmac
+import re
 from pathlib import Path
 import shutil
 import tempfile
 
 
-def prepare(source, destination, uid, gid):
+def prepare(source, destination, uid, gid, expected_sha256=None):
     source, destination = Path(source), Path(destination)
     destination.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     os.chown(str(destination.parent), uid, gid)
@@ -14,7 +17,17 @@ def prepare(source, destination, uid, gid):
     fd, temporary = tempfile.mkstemp(prefix='.prepare-', dir=str(destination.parent))
     try:
         with os.fdopen(fd, 'wb') as output, source.open('rb') as incoming:
-            shutil.copyfileobj(incoming, output)
+            if expected_sha256 is None:
+                shutil.copyfileobj(incoming, output)
+            else:
+                if not re.fullmatch('[0-9a-f]{64}', expected_sha256):
+                    raise ValueError('Expected asset identity must be a lowercase SHA256')
+                digest = hashlib.sha256()
+                while chunk := incoming.read(1024 * 1024):
+                    digest.update(chunk)
+                    output.write(chunk)
+                if not hmac.compare_digest(digest.hexdigest(), expected_sha256):
+                    raise ValueError('Provisioned asset does not match its release manifest')
             output.flush()
             os.fsync(output.fileno())
             os.fchown(output.fileno(), uid, gid)
@@ -41,7 +54,11 @@ def main():
         ('mysql-init', '10-import-registry.sh', '/input/10-import-registry.sh'),
         ('mysql-init', '20-create-app-user.sh', '/input/20-create-app-user.sh'),
     ]:
-        prepare(source, '/prepared/' + consumer + '/' + name, *consumers[consumer])
+        expected = None
+        if name in ('160_model.pth', 'registry.sql'):
+            variable = 'GCAI_EXPECTED_CHECKPOINT_SHA256' if name == '160_model.pth' else 'GCAI_EXPECTED_REGISTRY_SHA256'
+            expected = os.environ[variable]
+        prepare(source, '/prepared/' + consumer + '/' + name, *consumers[consumer], expected_sha256=expected)
     if os.getenv('GCAI_PREPARE_PROXY') == '1':
         for name in ('proxy_htpasswd', 'tls_certificate', 'tls_key'):
             prepare('/run/secrets/' + name, '/prepared/proxy/' + name, *consumers['proxy'])

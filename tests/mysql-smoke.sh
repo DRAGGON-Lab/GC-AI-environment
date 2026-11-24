@@ -65,6 +65,8 @@ export GCAI_BACKEND_IMAGE=$(docker image inspect python:3.12-slim --format '{{.I
 export GCAI_MYSQL_IMAGE=$(docker image inspect "${GCAI_MYSQL_TEST_IMAGE:-mysql:8.4}" --format '{{index .RepoDigests 0}}')
 export GCAI_MYSQL_UID=$(docker run --rm --network none --entrypoint id "$GCAI_MYSQL_IMAGE" -u mysql)
 export GCAI_MYSQL_GID=$(docker run --rm --network none --entrypoint id "$GCAI_MYSQL_IMAGE" -g mysql)
+export GCAI_EXPECTED_CHECKPOINT_SHA256=$(shasum -a 256 assets/160_model.pth | cut -d ' ' -f1)
+export GCAI_EXPECTED_REGISTRY_SHA256=$(shasum -a 256 assets/registry.sql | cut -d ' ' -f1)
 docker compose config --quiet
 docker compose up -d db > receipts/up.log 2>&1
 db_id=$(docker compose ps -q db)
