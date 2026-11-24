@@ -1,0 +1,13 @@
+{
+  "evidence_kind": "local_review_backup_restore",
+  "mysql_image_digest": "mysql@sha256:8c233bad33d520a7aae1c1e619c3a9775f4a1ba2d463d692fada04ec7f40be00",
+  "backup_sha256": "25f7ce424afc2184e00d87201ef4d2ce82e108bf4d363f557a5ef92af73f5cfa",
+  "restored_rows": 84285,
+  "source_table_checksum": 2942824569,
+  "restored_table_checksum": 2942824569,
+  "legacy_accounts_restored": false,
+  "restore_network": "none",
+  "restore_published_ports": [],
+  "result": "passed",
+  "production_restore": "not_run"
+}

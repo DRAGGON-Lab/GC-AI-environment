@@ -1,0 +1,11 @@
+{
+  "evidence_kind": "local_review_legacy_export",
+  "database_image": "cvtalrc/gc-ai-db@sha256:ff285f1370a7ee900d871c0a621232d3de29ecc39afd096d342f30449d89a695",
+  "network": "none",
+  "published_ports": [],
+  "table": "iGEM2024.parts",
+  "row_count": 84285,
+  "registry_sha256": "e869efcaa5bc37bc68065bb90eb48136d7319c1d52aec5a20dcdf4f045aa1766",
+  "legacy_accounts_imported": false,
+  "production_migration": "not_run"
+}

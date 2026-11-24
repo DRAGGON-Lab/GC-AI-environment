@@ -1,0 +1,20 @@
+services:
+  proxy:
+    platform: linux/amd64
+    image: ${GCAI_FRONTEND_IMAGE:?Set a reviewed frontend image by digest}
+    depends_on:
+      backend:
+        condition: service_started
+      secret-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    networks:
+      - application
+      - edge
+    security_opt:
+      - no-new-privileges:true

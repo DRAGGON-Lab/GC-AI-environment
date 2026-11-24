@@ -1,0 +1,233 @@
+{
+  "evidence_kind": "real_checkpoint_route_replay",
+  "checkpoint_sha256": "06ac3f64292ed93f49e296b60e32dab0b5b0182e86141b52ff43a253dba51749",
+  "executed_at": "2026-11-24T10:32:25.202978+00:00",
+  "python": "3.12.16",
+  "torch": "2.6.0+cpu",
+  "torchvision": "0.21.0+cpu",
+  "fixtures": [
+    {
+      "name": "Lux System (BBa_I13263)",
+      "image_sha256": "0f174f9cdb00a8dfe624d2cfb4a67158737b4da92462ae72071db1744a3da98f",
+      "record_sha256": "26fb92dc2b0e568edd43027a0eb8d3a9294d5607e9f342171f741eaa02c8b595",
+      "expected": {
+        "has_predictions": true,
+        "count": 4,
+        "glyphs": [
+          {
+            "glyph_class": "promoter",
+            "box": [
+              114,
+              279,
+              199,
+              364
+            ]
+          },
+          {
+            "glyph_class": "ribosome-entry-site",
+            "box": [
+              204,
+              297,
+              281,
+              362
+            ]
+          },
+          {
+            "glyph_class": "cds",
+            "box": [
+              302,
+              294,
+              398,
+              363
+            ]
+          },
+          {
+            "glyph_class": "cds",
+            "box": [
+              707,
+              290,
+              787,
+              355
+            ]
+          }
+        ]
+      },
+      "observed": {
+        "has_predictions": true,
+        "count": 4,
+        "glyphs": [
+          {
+            "glyph_class": "promoter",
+            "box": [
+              114,
+              279,
+              199,
+              364
+            ]
+          },
+          {
+            "glyph_class": "ribosome-entry-site",
+            "box": [
+              204,
+              297,
+              281,
+              362
+            ]
+          },
+          {
+            "glyph_class": "cds",
+            "box": [
+              302,
+              294,
+              398,
+              363
+            ]
+          },
+          {
+            "glyph_class": "cds",
+            "box": [
+              707,
+              290,
+              787,
+              355
+            ]
+          }
+        ]
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Repressilator (BBa_I5200)",
+      "image_sha256": "99f35b04f1ca2db93ada010ad72e3a0ec9e2fd4c82242d6113cb14ea3fd0e727",
+      "record_sha256": "78bda0e5176089480946e76a037521dae1135ac98489158e7a08069276505a35",
+      "expected": {
+        "has_predictions": true,
+        "count": 3,
+        "glyphs": [
+          {
+            "glyph_class": "cds",
+            "box": [
+              162,
+              299,
+              262,
+              368
+            ]
+          },
+          {
+            "glyph_class": "cds",
+            "box": [
+              540,
+              298,
+              642,
+              361
+            ]
+          },
+          {
+            "glyph_class": "cds",
+            "box": [
+              917,
+              292,
+              998,
+              360
+            ]
+          }
+        ]
+      },
+      "observed": {
+        "has_predictions": true,
+        "count": 3,
+        "glyphs": [
+          {
+            "glyph_class": "cds",
+            "box": [
+              162,
+              299,
+              262,
+              368
+            ]
+          },
+          {
+            "glyph_class": "cds",
+            "box": [
+              540,
+              298,
+              642,
+              361
+            ]
+          },
+          {
+            "glyph_class": "cds",
+            "box": [
+              917,
+              292,
+              998,
+              360
+            ]
+          }
+        ]
+      },
+      "result": "passed"
+    },
+    {
+      "name": "YES GATE",
+      "image_sha256": "02b3b09db5d628391e4ff39dfa274ba5481bc9e7b1f1b8365318593dacbc323d",
+      "record_sha256": "01819185bdf235d37cc3542c67dd5332ea30b4229a0997467e5956f939a68959",
+      "expected": {
+        "has_predictions": true,
+        "count": 2,
+        "glyphs": [
+          {
+            "glyph_class": "promoter",
+            "box": [
+              55,
+              164,
+              110,
+              234
+            ]
+          },
+          {
+            "glyph_class": "ribosome-entry-site",
+            "box": [
+              115,
+              186,
+              163,
+              230
+            ]
+          }
+        ]
+      },
+      "observed": {
+        "has_predictions": true,
+        "count": 2,
+        "glyphs": [
+          {
+            "glyph_class": "promoter",
+            "box": [
+              55,
+              164,
+              110,
+              234
+            ]
+          },
+          {
+            "glyph_class": "ribosome-entry-site",
+            "box": [
+              115,
+              186,
+              163,
+              230
+            ]
+          }
+        ]
+      },
+      "result": "passed"
+    }
+  ],
+  "gpu_required": false,
+  "device": "cpu",
+  "gpu_execution": false,
+  "result": "passed",
+  "verified_runtime_image_id": "sha256:c0f02126bd9e4ac8b0bf0918829b047803134fd191352a791224cef0adc6cf9f",
+  "verifier_sha256": "7a2413469bc33d3e7e61a45356fefb69ff37d670a95fdfdf2e5a40553594817d",
+  "backend_sources_sha256": "50216fd7829e8b1372059066e2764fccb18c9415e54ad525d423115e0ce8e00b"
+}
